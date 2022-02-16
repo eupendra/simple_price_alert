@@ -1,3 +1,4 @@
+import json
 import os
 import smtplib
 from datetime import datetime
@@ -31,9 +32,9 @@ def get_response(url):
 def get_price(html):
     soup = BeautifulSoup(html, 'lxml')
     el = soup.select_one('.price_color')
+    if not el: return None
     price = Price.fromstring(el.get_text())
-    if not price:
-        return None
+    if not price: return None
     return price.amount_float
 
 
@@ -67,7 +68,7 @@ def get_mail_subject_body(products):
     subject, body = None, None
     if df["alert"].any():
         subject = "[ALERT] Products Available"
-        table_html = df[df["alert"]].to_html()
+        table_html = df[df["alert"]].to_html(index=False)
         body = html_string.replace('{data}', table_html)
 
     return subject, body
@@ -80,8 +81,12 @@ def send_mail(products):
             print("No mail to send. Exiting...")
             return
         msg = EmailMessage()
-        mail_user = os.environ['MAIL_USER']
-        mail_pass = os.environ['MAIL_PASS']
+        with open('config.json') as f:
+            config = json.loads(f.read())
+
+        mail_user = os.environ.get('MAIL_USER', config['mail_user'])
+        mail_pass = os.environ.get('MAIL_PASS', config['mail_pass'])
+
         msg["Subject"] = subject
         msg['From'] = mail_user
         msg['To'] = 'eupendra@gmail.com'
