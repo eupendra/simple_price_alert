@@ -86,10 +86,11 @@ def send_mail(products):
 
         mail_user = os.environ.get('MAIL_USER', config['mail_user'])
         mail_pass = os.environ.get('MAIL_PASS', config['mail_pass'])
+        mail_to = os.environ.get('MAIL_TO', config['mail_to'])
 
         msg["Subject"] = subject
         msg['From'] = mail_user
-        msg['To'] = 'eupendra@gmail.com'
+        msg['To'] = mail_to
 
         msg.set_content(body, subtype='html')
 
