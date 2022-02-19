@@ -66,9 +66,9 @@ def get_mail_subject_body(products):
     with open('mail.html') as f:
         html_string = f.read()
     subject, body = None, None
-    if df["alert"].any():
-        subject = "[ALERT] Products Available"
-        table_html = df[df["alert"]].to_html(index=False)
+    if df['alert'].any():
+        subject = '[ALERT] Products Available'
+        table_html = df[df['alert']].to_html(index=False)
         body = html_string.replace('{data}', table_html)
 
     return subject, body
@@ -78,7 +78,7 @@ def send_mail(products):
     try:
         subject, body = get_mail_subject_body(products)
         if not (body and subject):
-            print("No mail to send. Exiting...")
+            print('No mail to send. Exiting...')
             return
         msg = EmailMessage()
         with open('config.json') as f:
@@ -87,22 +87,23 @@ def send_mail(products):
         mail_user = os.environ.get('MAIL_USER', config['mail_user'])
         mail_pass = os.environ.get('MAIL_PASS', config['mail_pass'])
         mail_to = os.environ.get('MAIL_TO', config['mail_to'])
-
-        msg["Subject"] = subject
+        if not all([mail_pass, mail_user, mail_to]):
+            raise ValueError('Mail Not Configured: check environment variables and config.json.')
+        msg['Subject'] = subject
         msg['From'] = mail_user
         msg['To'] = mail_to
 
         msg.set_content(body, subtype='html')
 
-        with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+        with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
             smtp.starttls()
             smtp.login(mail_user, mail_pass)
             smtp.send_message(msg)
 
     except Exception as e:
-        print("Error in Sending Mail\n", e)
+        print('Error in Sending Mail\n', e)
     else:
-        print("Mail Sent!")
+        print('Mail Sent!')
 
 
 def main():
