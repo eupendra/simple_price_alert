@@ -3,6 +3,7 @@ import json
 import os
 import smtplib
 from email.message import EmailMessage
+from h11 import PRODUCT_ID
 
 import pandas as pd
 import requests
@@ -12,18 +13,7 @@ from price_parser import Price
 CSV_FILE = "prices.csv"
 SAVE_TO_CSV = True
 SEND_MAIL = True
-products_to_monitor = [
-    {
-        "product": "A light in the Attic",
-        "url": "https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html",
-        "alert_price": 100,
-    },
-    {
-        "product": "Tipping the Velvet",
-        "url": "https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html",
-        "alert_price": 100,
-    },
-]
+PRODUCT_URL_CSV = "products.csv"
 
 
 def get_response(url):
@@ -102,13 +92,17 @@ def send_mail(products):
     else:
         print("Mail Sent!")
 
-
+def get_urls(csv_file):
+    df = pd.read_csv(csv_file)
+    return df.to_dict('records')
+    
 def main():
-    products = process_products(products_to_monitor)
+    products_to_track = get_urls(PRODUCT_URL_CSV)
+    products_updated = process_products(products_to_track)
     if SAVE_TO_CSV:
-        save_to_csv(products)
+        save_to_csv(products_updated)
     if SEND_MAIL:
-        send_mail(products)
+        send_mail(products_updated)
 
 
 if __name__ == "__main__":
