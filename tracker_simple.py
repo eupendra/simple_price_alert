@@ -1,9 +1,7 @@
-import csv
 import json
 import os
 import smtplib
 from email.message import EmailMessage
-from h11 import PRODUCT_ID
 
 import pandas as pd
 import requests
@@ -28,26 +26,17 @@ def get_price(html):
     return price.amount_float
 
 
-def process_products(products):
+def process_products(df):
     updated_products = []
-    for product in products:
+    for product in df.to_dict('records'):
         html = get_response(product["url"])
         product["price"] = get_price(html)
         product["alert"] = product["price"] < product["alert_price"]
         updated_products.append(product)
-    return updated_products
+    return pd.DataFrame(updated_products)
 
 
-def save_to_csv(data: list[dict]):
-    with open(CSV_FILE, "w") as f:
-        columns = data[0].keys()
-        writer = csv.DictWriter(f, fieldnames=columns)
-        writer.writeheader()
-        writer.writerows(data)
-
-
-def get_mail_subject_body(products: list[dict]) -> tuple[str, str]:
-    df = pd.DataFrame(products)
+def get_mail_subject_body(df) -> tuple[str, str]:
     with open("mail.html") as f:
         html_string = f.read()
     subject, body = None, None
@@ -59,9 +48,9 @@ def get_mail_subject_body(products: list[dict]) -> tuple[str, str]:
     return subject, body
 
 
-def send_mail(products):
+def send_mail(df):
     try:
-        subject, body = get_mail_subject_body(products)
+        subject, body = get_mail_subject_body(df)
         if not (body and subject):
             print("No mail to send. Exiting...")
             return
@@ -94,15 +83,15 @@ def send_mail(products):
 
 def get_urls(csv_file):
     df = pd.read_csv(csv_file)
-    return df.to_dict('records')
+    return df
     
 def main():
-    products_to_track = get_urls(PRODUCT_URL_CSV)
-    products_updated = process_products(products_to_track)
+    df = get_urls(PRODUCT_URL_CSV)
+    df_updated = process_products(df)
     if SAVE_TO_CSV:
-        save_to_csv(products_updated)
+         df_updated.to_csv(CSV_FILE, index=False, mode="a")
     if SEND_MAIL:
-        send_mail(products_updated)
+        send_mail(df_updated)
 
 
 if __name__ == "__main__":

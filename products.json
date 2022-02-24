@@ -6,4 +6,9 @@
     "product": "Tipping the Velvet",
     "url": "https://books.toscrape.com/catalogue/tipping-the-velvet_999/index.html",
     "alert_price": 100
-}]
+}, {
+    "product": "Sharp Objects",
+    "url": "https://books.toscrape.com/catalogue/sharp-objects_997/index.html",
+    "alert_price": 100
+}
+]
