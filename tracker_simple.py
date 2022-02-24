@@ -8,10 +8,10 @@ import requests
 from bs4 import BeautifulSoup
 from price_parser import Price
 
-CSV_FILE = "prices.csv"
+PRODUCT_URL_CSV = "products.csv"
+PRICES_CSV = "prices.csv"
 SAVE_TO_CSV = True
 SEND_MAIL = True
-PRODUCT_URL_CSV = "products.csv"
 
 
 def get_response(url):
@@ -28,7 +28,7 @@ def get_price(html):
 
 def process_products(df):
     updated_products = []
-    for product in df.to_dict('records'):
+    for product in df.to_dict("records"):
         html = get_response(product["url"])
         product["price"] = get_price(html)
         product["alert"] = product["price"] < product["alert_price"]
@@ -81,15 +81,17 @@ def send_mail(df):
     else:
         print("Mail Sent!")
 
+
 def get_urls(csv_file):
     df = pd.read_csv(csv_file)
     return df
-    
+
+
 def main():
     df = get_urls(PRODUCT_URL_CSV)
     df_updated = process_products(df)
     if SAVE_TO_CSV:
-         df_updated.to_csv(CSV_FILE, index=False, mode="a")
+        df_updated.to_csv(PRICES_CSV, index=False, mode="a")
     if SEND_MAIL:
         send_mail(df_updated)
 
