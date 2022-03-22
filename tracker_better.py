@@ -6,6 +6,7 @@ import smtplib
 from datetime import datetime
 from email.message import EmailMessage
 
+import numpy as np
 import pandas as pd
 import requests
 import scraper_helper as sh
@@ -16,7 +17,7 @@ from price_parser import Price
 CSV_FILE = 'prices.csv'
 SAVE_TO_CSV = True
 SEND_MAIL = True
-INPUT_FILE = 'products.json'
+INPUT_FILE = 'products.csv'
 
 # Logging
 logger = logging.getLogger(__name__)
@@ -38,7 +39,8 @@ def get_price(html):
     el = soup.select_one('.price_color')
     if not el: return None
     price = Price.fromstring(el.get_text())
-    if not price: return None
+    if not price:
+        return np.NAN
     return price.amount_float
 
 
@@ -47,13 +49,14 @@ def process_products(products: list):
     for product in products:
         url = product['url']
         html = get_response(url)
-        if not html: 
+        if not html:
             logger.warning(f'No response for url: {url}')
             continue
         product['price'] = get_price(html)
         product['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        product['alert'] = product['price'] < product['alert_price']
+        product['alert'] = product['price'] < product['alert_price'] if product['price'] else False
         updated_products.append(product)
+        logger.debug(product)
     logger.info(f'Updated products: {len(updated_products)}')
     return updated_products
 
@@ -108,7 +111,7 @@ def send_mail(products):
             smtp.send_message(msg)
 
     except Exception as e:
-        logger.error(f'Error in sending mail: {e}',exc_info=True, stack_info=True)
+        logger.error(f'Error in sending mail: {e}', exc_info=True, stack_info=True)
         print('Error in Sending Mail\n', e)
     else:
         logger.info('Mail sent successfully')
@@ -116,11 +119,12 @@ def send_mail(products):
 
 
 def get_products_to_track():
-    df=pd.read_json(INPUT_FILE)
+    df = pd.read_csv(INPUT_FILE)
     logger.info(f'Products to track: {len(df)}')
     logger.debug(f'Products to track: \n{df.to_string()}')
     return df.to_dict('records')
-    
+
+
 def main():
     products_to_track = get_products_to_track()
     if not products_to_track:

@@ -3,3 +3,5 @@ lxml
 pandas
 price-parser
 requests
+scraper-helper
+numpy
